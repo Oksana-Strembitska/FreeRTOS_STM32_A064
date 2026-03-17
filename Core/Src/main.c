@@ -37,7 +37,7 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-
+uint8_t k = 0;
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -48,17 +48,31 @@ const osThreadAttr_t defaultTask_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
-/* Definitions for vSpray_ON */
-osThreadId_t vSpray_ONHandle;
-const osThreadAttr_t vSpray_ON_attributes = {
-  .name = "vSpray_ON",
+/* Definitions for Spray */
+osThreadId_t SprayHandle;
+const osThreadAttr_t Spray_attributes = {
+  .name = "Spray",
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityLow,
 };
-/* Definitions for vFO_ON */
-osThreadId_t vFO_ONHandle;
-const osThreadAttr_t vFO_ON_attributes = {
-  .name = "vFO_ON",
+/* Definitions for FO */
+osThreadId_t FOHandle;
+const osThreadAttr_t FO_attributes = {
+  .name = "FO",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityLow,
+};
+/* Definitions for Butoon */
+osThreadId_t ButoonHandle;
+const osThreadAttr_t Butoon_attributes = {
+  .name = "Butoon",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityLow,
+};
+/* Definitions for Result */
+osThreadId_t ResultHandle;
+const osThreadAttr_t Result_attributes = {
+  .name = "Result",
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityLow,
 };
@@ -70,8 +84,10 @@ const osThreadAttr_t vFO_ON_attributes = {
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 void StartDefaultTask(void *argument);
-void StartTask02(void *argument);
-void StartTask03(void *argument);
+void vSpray(void *argument);
+void vFO(void *argument);
+void vButoon(void *argument);
+void vResult(void *argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -138,11 +154,17 @@ int main(void)
   /* creation of defaultTask */
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
-  /* creation of vSpray_ON */
-  vSpray_ONHandle = osThreadNew(StartTask02, NULL, &vSpray_ON_attributes);
+  /* creation of Spray */
+  SprayHandle = osThreadNew(vSpray, NULL, &Spray_attributes);
 
-  /* creation of vFO_ON */
-  vFO_ONHandle = osThreadNew(StartTask03, NULL, &vFO_ON_attributes);
+  /* creation of FO */
+  FOHandle = osThreadNew(vFO, NULL, &FO_attributes);
+
+  /* creation of Butoon */
+  ButoonHandle = osThreadNew(vButoon, NULL, &Butoon_attributes);
+
+  /* creation of Result */
+  ResultHandle = osThreadNew(vResult, NULL, &Result_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -159,12 +181,11 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
     /* USER CODE END WHILE */
 
-    /* USER CODE BEGIN 3 */
-  }
+	/* USER CODE BEGIN 3 */
+
+
   /* USER CODE END 3 */
 }
 
@@ -244,6 +265,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(B_GPIO_Port, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : Button_Pin */
+  GPIO_InitStruct.Pin = Button_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(Button_GPIO_Port, &GPIO_InitStruct);
+
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
   /* USER CODE END MX_GPIO_Init_2 */
@@ -272,42 +299,101 @@ void StartDefaultTask(void *argument)
   /* USER CODE END 5 */
 }
 
-/* USER CODE BEGIN Header_StartTask02 */
+/* USER CODE BEGIN Header_vSpray */
 /**
-* @brief Function implementing the vSpray_ON thread.
+* @brief Function implementing the Spray thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_StartTask02 */
-void StartTask02(void *argument)
+/* USER CODE END Header_vSpray */
+void vSpray(void *argument)
 {
-  /* USER CODE BEGIN StartTask02 */
+  /* USER CODE BEGIN vSpray */
   /* Infinite loop */
   for(;;)
   {
 		HAL_GPIO_TogglePin (GPIOA, GPIO_PIN_7);
     osDelay(500);
   }
-  /* USER CODE END StartTask02 */
+  /* USER CODE END vSpray */
 }
 
-/* USER CODE BEGIN Header_StartTask03 */
+/* USER CODE BEGIN Header_vFO */
 /**
-* @brief Function implementing the vFO_ON thread.
+* @brief Function implementing the FO thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_StartTask03 */
-void StartTask03(void *argument)
+/* USER CODE END Header_vFO */
+void vFO(void *argument)
 {
-  /* USER CODE BEGIN StartTask03 */
+  /* USER CODE BEGIN vFO */
   /* Infinite loop */
   for(;;)
   {
-		HAL_GPIO_TogglePin (GPIOB, GPIO_PIN_0);
-    osDelay(200);
+    osDelay(1);
   }
-  /* USER CODE END StartTask03 */
+  /* USER CODE END vFO */
+}
+
+/* USER CODE BEGIN Header_vButoon */
+/**
+* @brief Function implementing the Butoon thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_vButoon */
+void vButoon(void *argument)
+{
+  /* USER CODE BEGIN vButoon */
+  /* Infinite loop */
+  for(;;)
+  {
+		if (HAL_GPIO_ReadPin (GPIOB, GPIO_PIN_1) == GPIO_PIN_SET)
+		{
+			while (HAL_GPIO_ReadPin (GPIOB, GPIO_PIN_1) == GPIO_PIN_SET)
+			{
+				vTaskDelay (50);
+			}
+			k=1;		
+		}
+		if (HAL_GPIO_ReadPin (GPIOB, GPIO_PIN_1) == GPIO_PIN_RESET)
+		{
+			while (HAL_GPIO_ReadPin (GPIOB, GPIO_PIN_1) == GPIO_PIN_RESET)
+			{
+				vTaskDelay (50);
+			}
+			k=0;		
+		}
+		osDelay (100);
+  }
+  /* USER CODE END vButoon */
+}
+
+/* USER CODE BEGIN Header_vResult */
+/**
+* @brief Function implementing the Result thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_vResult */
+void vResult(void *argument)
+{
+  /* USER CODE BEGIN vResult */
+  /* Infinite loop */
+  for(;;)
+  {
+		if (k==1)
+		{
+			HAL_GPIO_WritePin (GPIOB, GPIO_PIN_0, GPIO_PIN_SET); 
+		}
+		else
+		{
+			HAL_GPIO_WritePin (GPIOB, GPIO_PIN_0, GPIO_PIN_RESET); 
+		}
+    osDelay(100);
+  }
+  /* USER CODE END vResult */
 }
 
 /**
